@@ -96,6 +96,23 @@
             width: 100%;
             max-width: 600px;
         }
+
+        /* Vibe Jam Link Styles */
+        .vibe-jam-link {
+            font-family: 'system-ui', sans-serif;
+            position: fixed;
+            bottom: -1px;
+            right: -1px;
+            padding: 7px;
+            font-size: 14px;
+            font-weight: bold;
+            background: #fff;
+            color: #000;
+            text-decoration: none;
+            z-index: 10000;
+            border-top-left-radius: 12px;
+            border: 1px solid #fff;
+        }
     </style>
 </head>
 <body>
@@ -150,6 +167,9 @@
         
         <!-- Error log for debugging -->
         <div id="error-log"></div>
+
+        <!-- Vibe Jam 2025 Link -->
+        <a href="https://jam.pieter.com" class="vibe-jam-link">🕹️ Vibe Jam 2025</a>
     </div>
     
     <!-- Script loading with improved error handling -->
@@ -221,16 +241,18 @@
             // Continue loading the rest of the scripts
             function continueLoading(basePath) {
                 loadScript(basePath + 'player.js', function() {
-                    loadScript(basePath + 'level.js', function() {
-                        loadScript(basePath + 'controls.js', function() {
-                            loadScript(basePath + 'audio.js', function() {
-                                loadScript(basePath + 'leaderboard.js', function() {
-                                    loadScript(basePath + 'monetization.js', function() {
-                                        loadScript(basePath + 'game.js', function() {
-                                            loadScript(basePath + 'main.js', function() {
-                                                console.log('All game scripts loaded successfully');
-                                                const errorLog = document.getElementById('error-log');
-                                                errorLog.innerHTML += '<div style="color:green">All game scripts loaded successfully!</div>';
+                    loadScript(basePath + 'portal.js', function() {
+                        loadScript(basePath + 'level.js', function() {
+                            loadScript(basePath + 'controls.js', function() {
+                                loadScript(basePath + 'audio.js', function() {
+                                    loadScript(basePath + 'leaderboard.js', function() {
+                                        loadScript(basePath + 'monetization.js', function() {
+                                            loadScript(basePath + 'game.js', function() {
+                                                loadScript(basePath + 'main.js', function() {
+                                                    console.log('All game scripts loaded successfully');
+                                                    const errorLog = document.getElementById('error-log');
+                                                    errorLog.innerHTML += '<div style="color:green">All game scripts loaded successfully!</div>';
+                                                });
                                             });
                                         });
                                     });

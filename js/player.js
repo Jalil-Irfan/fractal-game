@@ -6,6 +6,11 @@ class Player {
         this.acceleration = new THREE.Vector3(0, -9.8, 0); // Gravity
         this.rotationSpeed = new THREE.Vector3(0, 0, 0);
         
+        // Movement properties
+        this.moveSpeed = 10;
+        this.maxSpeed = 15;
+        this.friction = 0.95;
+        
         // Crystal properties
         this.size = 1.2;
         this.mesh = null;
@@ -63,14 +68,33 @@ class Player {
         this.isAlive = true;
     }
 
-    update() {
+    update(deltaTime) {
         if (!this.isAlive || !this.mesh) return;
         
         // Apply gravity
-        this.velocity.add(this.acceleration.clone().multiplyScalar(0.016)); // Assume 60fps, dt = 1/60
+        this.velocity.add(this.acceleration.clone().multiplyScalar(deltaTime));
+        
+        // Apply horizontal movement
+        if (this.moveDirection) {
+            const moveVector = new THREE.Vector3(this.moveDirection.x, 0, this.moveDirection.z);
+            moveVector.normalize();
+            this.velocity.add(moveVector.multiplyScalar(this.moveSpeed * deltaTime));
+            
+            // Limit horizontal speed
+            const horizontalSpeed = Math.sqrt(this.velocity.x * this.velocity.x + this.velocity.z * this.velocity.z);
+            if (horizontalSpeed > this.maxSpeed) {
+                const scale = this.maxSpeed / horizontalSpeed;
+                this.velocity.x *= scale;
+                this.velocity.z *= scale;
+            }
+        }
+        
+        // Apply friction to horizontal movement
+        this.velocity.x *= this.friction;
+        this.velocity.z *= this.friction;
         
         // Update position
-        this.position.add(this.velocity.clone().multiplyScalar(0.016));
+        this.position.add(this.velocity.clone().multiplyScalar(deltaTime));
         
         // Update mesh
         this.updateMesh();
@@ -132,5 +156,9 @@ class Player {
     addBonusPoints(points) {
         this.score += points;
         console.log(`Added ${points} bonus points. Total score: ${this.score}`);
+    }
+
+    setMoveDirection(direction) {
+        this.moveDirection = direction;
     }
 }

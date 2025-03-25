@@ -1,6 +1,7 @@
 class Controls {
-    constructor(camera) {
+    constructor(camera, player) {
         this.camera = camera;
+        this.player = player;
         this.isDragging = false;
         this.previousMousePosition = { x: 0, y: 0 };
         this.cameraRadius = 35; // Distance from camera to center
@@ -11,7 +12,9 @@ class Controls {
         // Controls state
         this.keysPressed = {
             left: false,
-            right: false
+            right: false,
+            forward: false,
+            backward: false
         };
         
         this.joystick = null;
@@ -37,13 +40,7 @@ class Controls {
         
         // Keyboard controls
         document.addEventListener('keydown', this.onKeyDown.bind(this));
-        document.addEventListener('keyup', (event) => {
-            if (event.key === 'ArrowLeft' || event.key === 'a' || event.key === 'A') {
-                this.keysPressed.left = false;
-            } else if (event.key === 'ArrowRight' || event.key === 'd' || event.key === 'D') {
-                this.keysPressed.right = false;
-            }
-        });
+        document.addEventListener('keyup', this.onKeyUp.bind(this));
     }
     
     setupMobileControls() {
@@ -146,11 +143,78 @@ class Controls {
     }
     
     onKeyDown(event) {
-        if (event.key === 'ArrowLeft' || event.key === 'a' || event.key === 'A') {
-            this.keysPressed.left = true;
-        } else if (event.key === 'ArrowRight' || event.key === 'd' || event.key === 'D') {
-            this.keysPressed.right = true;
+        switch(event.key.toLowerCase()) {
+            case 'arrowleft':
+            case 'a':
+                this.keysPressed.left = true;
+                break;
+            case 'arrowright':
+            case 'd':
+                this.keysPressed.right = true;
+                break;
+            case 'arrowup':
+            case 'w':
+                this.keysPressed.forward = true;
+                break;
+            case 'arrowdown':
+            case 's':
+                this.keysPressed.backward = true;
+                break;
         }
+        this.updatePlayerMovement();
+    }
+    
+    onKeyUp(event) {
+        switch(event.key.toLowerCase()) {
+            case 'arrowleft':
+            case 'a':
+                this.keysPressed.left = false;
+                break;
+            case 'arrowright':
+            case 'd':
+                this.keysPressed.right = false;
+                break;
+            case 'arrowup':
+            case 'w':
+                this.keysPressed.forward = false;
+                break;
+            case 'arrowdown':
+            case 's':
+                this.keysPressed.backward = false;
+                break;
+        }
+        this.updatePlayerMovement();
+    }
+    
+    updatePlayerMovement() {
+        if (!this.player) return;
+        
+        // Calculate movement direction based on camera angle
+        const moveDirection = new THREE.Vector3(0, 0, 0);
+        
+        if (this.keysPressed.forward) {
+            moveDirection.x += Math.sin(this.cameraAngle);
+            moveDirection.z += Math.cos(this.cameraAngle);
+        }
+        if (this.keysPressed.backward) {
+            moveDirection.x -= Math.sin(this.cameraAngle);
+            moveDirection.z -= Math.cos(this.cameraAngle);
+        }
+        if (this.keysPressed.left) {
+            moveDirection.x += Math.sin(this.cameraAngle - Math.PI/2);
+            moveDirection.z += Math.cos(this.cameraAngle - Math.PI/2);
+        }
+        if (this.keysPressed.right) {
+            moveDirection.x += Math.sin(this.cameraAngle + Math.PI/2);
+            moveDirection.z += Math.cos(this.cameraAngle + Math.PI/2);
+        }
+        
+        // Normalize movement direction
+        if (moveDirection.lengthSq() > 0) {
+            moveDirection.normalize();
+        }
+        
+        this.player.setMoveDirection(moveDirection);
     }
     
     rotateCamera(angle) {
@@ -187,6 +251,7 @@ class Controls {
         document.removeEventListener('touchmove', this.onTouchMove);
         document.removeEventListener('touchend', this.onTouchEnd);
         document.removeEventListener('keydown', this.onKeyDown);
+        document.removeEventListener('keyup', this.onKeyUp);
         
         // Remove joystick
         if (this.joystick) {

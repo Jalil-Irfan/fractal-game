@@ -81,7 +81,7 @@ class Game {
             this.player.init(this.scene);
             console.log('Player initialized');
             
-            this.controls = new Controls(this.scene.camera);
+            this.controls = new Controls(this.scene.camera, this.player);
             console.log('Controls initialized');
             
             this.monetization = new Monetization(this.scene.scene);

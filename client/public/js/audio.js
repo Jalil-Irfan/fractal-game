@@ -25,20 +25,46 @@ class AudioManager {
     }
 
     createBackgroundMusic() {
-        const oscillator = this.audioContext.createOscillator();
-        const gainNode = this.audioContext.createGain();
+        // Create a more soothing background music using multiple oscillators
+        const frequencies = [220, 277.18, 329.63, 440]; // A3, C#4, E4, A4 (A major chord)
+        const oscillators = [];
+        const gainNodes = [];
         
-        oscillator.type = 'sine';
-        oscillator.frequency.value = 220; // A3 note
-        
-        gainNode.gain.value = 0.1;
-        
-        oscillator.connect(gainNode);
-        gainNode.connect(this.audioContext.destination);
+        frequencies.forEach((freq, index) => {
+            const oscillator = this.audioContext.createOscillator();
+            const gainNode = this.audioContext.createGain();
+            
+            // Use sine wave for smooth sound
+            oscillator.type = 'sine';
+            oscillator.frequency.value = freq;
+            
+            // Create a gentle pulsing effect
+            const pulseGain = this.audioContext.createGain();
+            const pulseOsc = this.audioContext.createOscillator();
+            pulseOsc.type = 'sine';
+            pulseOsc.frequency.value = 0.5; // Slow pulse
+            pulseOsc.connect(pulseGain);
+            pulseGain.gain.value = 0.05; // Subtle pulse
+            pulseGain.connect(oscillator.frequency);
+            
+            // Set initial volume based on frequency (lower notes slightly louder)
+            gainNode.gain.value = 0.05 * (1 - (index * 0.1));
+            
+            // Add slight delay between notes
+            const delay = this.audioContext.createDelay();
+            delay.delayTime.value = index * 0.1;
+            
+            oscillator.connect(delay);
+            delay.connect(gainNode);
+            gainNode.connect(this.audioContext.destination);
+            
+            oscillators.push(oscillator);
+            gainNodes.push(gainNode);
+        });
         
         this.backgroundMusic = {
-            oscillator: oscillator,
-            gainNode: gainNode,
+            oscillators: oscillators,
+            gainNodes: gainNodes,
             isPlaying: false
         };
     }
@@ -142,7 +168,8 @@ class AudioManager {
     startBackgroundMusic() {
         if (this.isMuted || !this.backgroundMusic || this.backgroundMusic.isPlaying) return;
         
-        this.backgroundMusic.oscillator.start();
+        // Start all oscillators
+        this.backgroundMusic.oscillators.forEach(osc => osc.start());
         this.backgroundMusic.isPlaying = true;
     }
 
@@ -150,10 +177,11 @@ class AudioManager {
         if (!this.backgroundMusic || !this.backgroundMusic.isPlaying) return;
         
         try {
-            this.backgroundMusic.oscillator.stop();
+            // Stop all oscillators
+            this.backgroundMusic.oscillators.forEach(osc => osc.stop());
             this.backgroundMusic.isPlaying = false;
             
-            // Recreate oscillator as it can't be restarted once stopped
+            // Recreate oscillators as they can't be restarted once stopped
             this.createBackgroundMusic();
         } catch (error) {
             console.error('Error stopping background music:', error);
@@ -164,7 +192,9 @@ class AudioManager {
         this.isMuted = !this.isMuted;
         
         if (this.backgroundMusic) {
-            this.backgroundMusic.gainNode.gain.value = this.isMuted ? 0 : 0.1;
+            this.backgroundMusic.gainNodes.forEach(gainNode => {
+                gainNode.gain.value = this.isMuted ? 0 : gainNode.gain.defaultValue;
+            });
         }
         
         return this.isMuted;
