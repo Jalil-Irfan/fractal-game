@@ -2,260 +2,240 @@ class Controls {
     constructor(camera, player) {
         this.camera = camera;
         this.player = player;
-        this.isDragging = false;
-        this.previousMousePosition = { x: 0, y: 0 };
-        this.cameraRadius = 35; // Distance from camera to center
-        this.cameraHeight = 20;
-        this.cameraAngle = 0;
-        this.rotationSpeed = 0.01;
         
-        // Controls state
-        this.keysPressed = {
+        // Camera settings
+        this.cameraDistance = 40;
+        this.cameraHeight = 35;
+        this.minCameraHeight = 20;
+        this.maxCameraHeight = 70;
+        this.rotationSpeed = 1.5;
+        this.heightSpeed = 1.0;
+        this.angle = 0;
+        
+        // Player movement settings
+        this.moveSpeed = 5;
+        this.jumpForce = 10;
+        
+        // Initialize key states
+        this.keys = {
             left: false,
             right: false,
-            forward: false,
-            backward: false
+            up: false,
+            down: false,
+            space: false
         };
         
-        this.joystick = null;
+        // Touch controls
+        this.isDragging = false;
+        this.previousTouchPosition = { x: 0, y: 0 };
         
         // Set initial camera position
-        this.updateCameraPosition();
+        this.updateCamera();
         
-        // Detect if we're on a mobile device
-        this.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        
-        if (this.isMobile) {
-            this.setupMobileControls();
-        } else {
-            this.setupDesktopControls();
-        }
+        // Setup controls
+        this.setupDesktopControls();
+        this.setupMobileControls();
     }
-    
+
     setupDesktopControls() {
-        // Mouse controls
-        document.addEventListener('mousedown', this.onMouseDown.bind(this));
-        document.addEventListener('mousemove', this.onMouseMove.bind(this));
-        document.addEventListener('mouseup', this.onMouseUp.bind(this));
-        
-        // Keyboard controls
-        document.addEventListener('keydown', this.onKeyDown.bind(this));
-        document.addEventListener('keyup', this.onKeyUp.bind(this));
+        document.addEventListener('keydown', (e) => this.handleKeyDown(e));
+        document.addEventListener('keyup', (e) => this.handleKeyUp(e));
+        document.addEventListener('mousedown', (e) => this.handleMouseDown(e));
+        document.addEventListener('mousemove', (e) => this.handleMouseMove(e));
+        document.addEventListener('mouseup', () => this.handleMouseUp());
     }
-    
+
     setupMobileControls() {
-        // Touch controls
-        document.addEventListener('touchstart', this.onTouchStart.bind(this));
-        document.addEventListener('touchmove', this.onTouchMove.bind(this));
-        document.addEventListener('touchend', this.onTouchEnd.bind(this));
+        document.addEventListener('touchstart', (e) => this.handleTouchStart(e));
+        document.addEventListener('touchmove', (e) => this.handleTouchMove(e));
+        document.addEventListener('touchend', () => this.handleTouchEnd());
         
-        // Virtual joystick for mobile
-        this.setupVirtualJoystick();
-    }
-    
-    setupVirtualJoystick() {
+        // Setup virtual joystick
         const mobileControls = document.getElementById('mobile-controls');
-        if (!mobileControls) return;
-        
-        if (typeof nipplejs !== 'undefined') {
+        if (mobileControls && typeof nipplejs !== 'undefined') {
             this.joystick = nipplejs.create({
                 zone: mobileControls,
                 mode: 'static',
-                position: { left: '50%', top: '50%' },
-                color: 'rgba(74, 144, 226, 0.5)',
+                position: { left: '50%', bottom: '20%' },
+                color: 'white',
                 size: 120
             });
             
-            this.joystick.on('move', (event, data) => {
-                if (data.direction) {
-                    if (data.direction.angle === 'left') {
-                        this.rotateCamera(this.rotationSpeed * 2);
-                    } else if (data.direction.angle === 'right') {
-                        this.rotateCamera(-this.rotationSpeed * 2);
-                    }
-                }
+            this.joystick.on('move', (evt, data) => {
+                const angle = data.angle.radian;
+                this.movePlayer(angle);
             });
-            
-            mobileControls.style.display = 'block';
-        } else {
-            console.warn('nipplejs not loaded, virtual joystick disabled');
         }
     }
-    
-    onMouseDown(event) {
-        this.isDragging = true;
-        this.previousMousePosition = {
-            x: event.clientX,
-            y: event.clientY
-        };
+
+    handleKeyDown(event) {
+        switch(event.key) {
+            case 'ArrowLeft':
+                this.keys.left = true;
+                break;
+            case 'ArrowRight':
+                this.keys.right = true;
+                break;
+            case 'ArrowUp':
+                this.keys.up = true;
+                break;
+            case 'ArrowDown':
+                this.keys.down = true;
+                break;
+            case ' ':
+                this.keys.space = true;
+                break;
+        }
     }
-    
-    onMouseMove(event) {
+
+    handleKeyUp(event) {
+        switch(event.key) {
+            case 'ArrowLeft':
+                this.keys.left = false;
+                break;
+            case 'ArrowRight':
+                this.keys.right = false;
+                break;
+            case 'ArrowUp':
+                this.keys.up = false;
+                break;
+            case 'ArrowDown':
+                this.keys.down = false;
+                break;
+            case ' ':
+                this.keys.space = false;
+                break;
+        }
+    }
+
+    handleMouseDown(event) {
+        this.isDragging = true;
+        this.previousTouchPosition = { x: event.clientX, y: event.clientY };
+    }
+
+    handleMouseMove(event) {
         if (!this.isDragging) return;
         
-        const deltaMove = {
-            x: event.clientX - this.previousMousePosition.x,
-            y: event.clientY - this.previousMousePosition.y
-        };
+        const deltaX = event.clientX - this.previousTouchPosition.x;
+        const deltaY = event.clientY - this.previousTouchPosition.y;
         
-        // Only rotate camera based on horizontal mouse movement
-        this.rotateCamera(-deltaMove.x * 0.01);
+        this.angle += deltaX * 0.01;
+        this.cameraHeight = Math.max(this.minCameraHeight, 
+            Math.min(this.maxCameraHeight, this.cameraHeight - deltaY * 0.1));
         
-        this.previousMousePosition = {
-            x: event.clientX,
-            y: event.clientY
-        };
+        this.previousTouchPosition = { x: event.clientX, y: event.clientY };
     }
-    
-    onMouseUp() {
+
+    handleMouseUp() {
         this.isDragging = false;
     }
-    
-    onTouchStart(event) {
+
+    handleTouchStart(event) {
         if (event.touches.length === 1) {
             this.isDragging = true;
-            this.previousMousePosition = {
-                x: event.touches[0].clientX,
-                y: event.touches[0].clientY
+            this.previousTouchPosition = { 
+                x: event.touches[0].clientX, 
+                y: event.touches[0].clientY 
             };
         }
     }
-    
-    onTouchMove(event) {
+
+    handleTouchMove(event) {
         if (!this.isDragging || event.touches.length !== 1) return;
         
-        const deltaMove = {
-            x: event.touches[0].clientX - this.previousMousePosition.x,
-            y: event.touches[0].clientY - this.previousMousePosition.y
-        };
+        const deltaX = event.touches[0].clientX - this.previousTouchPosition.x;
+        const deltaY = event.touches[0].clientY - this.previousTouchPosition.y;
         
-        // Only rotate camera based on horizontal touch movement
-        this.rotateCamera(-deltaMove.x * 0.01);
+        this.angle += deltaX * 0.01;
+        this.cameraHeight = Math.max(this.minCameraHeight, 
+            Math.min(this.maxCameraHeight, this.cameraHeight - deltaY * 0.1));
         
-        this.previousMousePosition = {
-            x: event.touches[0].clientX,
-            y: event.touches[0].clientY
+        this.previousTouchPosition = { 
+            x: event.touches[0].clientX, 
+            y: event.touches[0].clientY 
         };
     }
-    
-    onTouchEnd() {
+
+    handleTouchEnd() {
         this.isDragging = false;
     }
-    
-    onKeyDown(event) {
-        switch(event.key.toLowerCase()) {
-            case 'arrowleft':
-            case 'a':
-                this.keysPressed.left = true;
-                break;
-            case 'arrowright':
-            case 'd':
-                this.keysPressed.right = true;
-                break;
-            case 'arrowup':
-            case 'w':
-                this.keysPressed.forward = true;
-                break;
-            case 'arrowdown':
-            case 's':
-                this.keysPressed.backward = true;
-                break;
-        }
-        this.updatePlayerMovement();
-    }
-    
-    onKeyUp(event) {
-        switch(event.key.toLowerCase()) {
-            case 'arrowleft':
-            case 'a':
-                this.keysPressed.left = false;
-                break;
-            case 'arrowright':
-            case 'd':
-                this.keysPressed.right = false;
-                break;
-            case 'arrowup':
-            case 'w':
-                this.keysPressed.forward = false;
-                break;
-            case 'arrowdown':
-            case 's':
-                this.keysPressed.backward = false;
-                break;
-        }
-        this.updatePlayerMovement();
-    }
-    
-    updatePlayerMovement() {
+
+    movePlayer(angle) {
         if (!this.player) return;
         
-        // Calculate movement direction based on camera angle
-        const moveDirection = new THREE.Vector3(0, 0, 0);
+        const moveX = Math.sin(angle) * this.moveSpeed;
+        const moveZ = Math.cos(angle) * this.moveSpeed;
         
-        if (this.keysPressed.forward) {
-            moveDirection.x += Math.sin(this.cameraAngle);
-            moveDirection.z += Math.cos(this.cameraAngle);
-        }
-        if (this.keysPressed.backward) {
-            moveDirection.x -= Math.sin(this.cameraAngle);
-            moveDirection.z -= Math.cos(this.cameraAngle);
-        }
-        if (this.keysPressed.left) {
-            moveDirection.x += Math.sin(this.cameraAngle - Math.PI/2);
-            moveDirection.z += Math.cos(this.cameraAngle - Math.PI/2);
-        }
-        if (this.keysPressed.right) {
-            moveDirection.x += Math.sin(this.cameraAngle + Math.PI/2);
-            moveDirection.z += Math.cos(this.cameraAngle + Math.PI/2);
-        }
-        
-        // Normalize movement direction
-        if (moveDirection.lengthSq() > 0) {
-            moveDirection.normalize();
-        }
-        
-        this.player.setMoveDirection(moveDirection);
+        this.player.velocity.x = moveX;
+        this.player.velocity.z = moveZ;
     }
-    
-    rotateCamera(angle) {
-        this.cameraAngle += angle;
-        this.updateCameraPosition();
-    }
-    
-    updateCameraPosition() {
-        // Calculate camera position based on angle and radius
-        this.camera.position.x = Math.sin(this.cameraAngle) * this.cameraRadius;
-        this.camera.position.z = Math.cos(this.cameraAngle) * this.cameraRadius;
-        this.camera.position.y = this.cameraHeight;
-        
-        // Always look at the origin
-        this.camera.lookAt(0, 0, 0);
-    }
-    
+
     update() {
-        // Handle key presses
-        if (this.keysPressed.left) {
-            this.rotateCamera(this.rotationSpeed);
+        // Update camera rotation
+        if (this.keys.left) {
+            this.angle += this.rotationSpeed * 0.02;
         }
-        if (this.keysPressed.right) {
-            this.rotateCamera(-this.rotationSpeed);
+        if (this.keys.right) {
+            this.angle -= this.rotationSpeed * 0.02;
         }
+        
+        // Update camera height
+        if (this.keys.up) {
+            this.cameraHeight = Math.min(this.maxCameraHeight, this.cameraHeight + this.heightSpeed);
+        }
+        if (this.keys.down) {
+            this.cameraHeight = Math.max(this.minCameraHeight, this.cameraHeight - this.heightSpeed);
+        }
+
+        // Update player movement
+        if (this.keys.left) {
+            this.player.velocity.x = -this.moveSpeed;
+        } else if (this.keys.right) {
+            this.player.velocity.x = this.moveSpeed;
+        } else {
+            this.player.velocity.x = 0;
+        }
+
+        if (this.keys.space && !this.player.isJumping) {
+            this.player.velocity.y = this.jumpForce;
+            this.player.isJumping = true;
+        }
+
+        this.updateCamera();
     }
-    
+
+    updateCamera() {
+        // Calculate camera position
+        const x = Math.sin(this.angle) * this.cameraDistance;
+        const z = Math.cos(this.angle) * this.cameraDistance;
+        
+        // Get target position (slightly above player)
+        const targetY = this.player.mesh.position.y + 5;
+        
+        // Update camera position
+        this.camera.position.set(
+            this.player.mesh.position.x + x,
+            targetY + this.cameraHeight,
+            this.player.mesh.position.z + z
+        );
+        
+        // Make camera look at point slightly above player
+        this.camera.lookAt(
+            this.player.mesh.position.x,
+            targetY,
+            this.player.mesh.position.z
+        );
+    }
+
     dispose() {
         // Remove event listeners
-        document.removeEventListener('mousedown', this.onMouseDown);
-        document.removeEventListener('mousemove', this.onMouseMove);
-        document.removeEventListener('mouseup', this.onMouseUp);
-        document.removeEventListener('touchstart', this.onTouchStart);
-        document.removeEventListener('touchmove', this.onTouchMove);
-        document.removeEventListener('touchend', this.onTouchEnd);
-        document.removeEventListener('keydown', this.onKeyDown);
-        document.removeEventListener('keyup', this.onKeyUp);
-        
-        // Remove joystick
-        if (this.joystick) {
-            this.joystick.destroy();
-        }
+        document.removeEventListener('keydown', this.handleKeyDown);
+        document.removeEventListener('keyup', this.handleKeyUp);
+        document.removeEventListener('mousedown', this.handleMouseDown);
+        document.removeEventListener('mousemove', this.handleMouseMove);
+        document.removeEventListener('mouseup', this.handleMouseUp);
+        document.removeEventListener('touchstart', this.handleTouchStart);
+        document.removeEventListener('touchmove', this.handleTouchMove);
+        document.removeEventListener('touchend', this.handleTouchEnd);
     }
 }

@@ -67,20 +67,18 @@ class Game {
         this.initUI();
 
         // Initialize monetization
-        this.monetization = new Monetization();
+        this.monetization = new Monetization(this.scene.scene);
 
         // Initialize leaderboard
         this.leaderboard = new Leaderboard();
 
-        // Start game loop
-        this.isRunning = true;
-        this.lastTime = performance.now();
-        this.elapsedTime = 0;
-        this.gameLoop();
-
         // Add event listeners
         window.addEventListener('resize', () => this.handleResize());
-        document.getElementById('mute-button').addEventListener('click', () => this.handleMute());
+
+        // Set initial game state
+        this.isRunning = false;
+        this.gameOver = false;
+        this.elapsedTime = 0;
 
         console.log('Game initialized successfully');
     }
@@ -161,22 +159,6 @@ class Game {
             });
             console.log('Play again button click listener added');
         }
-
-        // Mute button click
-        const muteButton = document.getElementById('mute-button');
-        console.log('Mute button element:', muteButton);
-        
-        if (muteButton) {
-            muteButton.addEventListener('click', () => {
-                console.log('Mute button clicked');
-                const isMuted = this.audio.toggleMute();
-                muteButton.textContent = isMuted ? '🔇' : '🔊';
-                muteButton.classList.toggle('muted', isMuted);
-            });
-            console.log('Mute button click listener added');
-        } else {
-            console.error('Mute button not found in DOM');
-        }
         
         console.log('Event listeners setup complete');
     }
@@ -225,17 +207,16 @@ class Game {
             this.startScreen.classList.add('hidden');
             this.startScreen.style.display = 'none';
             console.log('Start screen hidden');
-        } else {
-            console.error('Start screen element not found');
         }
         
         if (this.gameScreen) {
             this.gameScreen.classList.remove('hidden');
             this.gameScreen.style.display = 'flex';
             console.log('Game screen shown');
-        } else {
-            console.error('Game screen element not found');
         }
+
+        // Set game as running before creating levels
+        this.isRunning = true;
         
         // Create initial levels
         this.createInitialLevels();
@@ -245,26 +226,24 @@ class Game {
             const firstLevel = this.levels[0];
             this.player.reset(firstLevel.startY + 5);
             console.log('Player position reset');
-        } else {
-            console.error('No levels created');
         }
+
+        // Show music player and start music when game starts
+        const musicPlayer = document.getElementById('music-player');
+        if (musicPlayer) {
+            musicPlayer.style.display = 'block';
+        }
+        this.audio.startBackgroundMusic();
         
         // Reset game state
         this.gameOver = false;
-        this.currentLevel = 1;
-        this.levelCompleted = false;
         this.startTime = Date.now();
         this.lastFrameTime = this.startTime;
         this.elapsedTime = 0;
-        
-        // Start audio
-        if (this.audio) {
-            this.audio.startBackgroundMusic();
-            console.log('Background music started');
-        }
+        this.currentLevel = 1;
+        this.levelCompleted = false;
         
         // Start game loop
-        this.isRunning = true;
         this.gameLoop();
         
         console.log('Game started successfully');
@@ -299,7 +278,7 @@ class Game {
             this.player.update(deltaTime);
             
             // Check if player has fallen out of bounds
-            if (this.player.mesh.position.y < -100) { // Adjust this value based on your game's scale
+            if (this.player.mesh.position.y < -100) {
                 this.endGame();
                 return;
             }
@@ -324,9 +303,20 @@ class Game {
             level.update(deltaTime);
         });
 
-        // Check level completion
-        if (this.levels.length > 0 && this.levels[0].checkCollision(this.player)) {
-            this.completeLevel();
+        // Check collisions and level completion
+        if (this.levels.length > 0) {
+            const currentLevel = this.levels[0];
+            const result = currentLevel.checkCollision(this.player);
+            
+            if (result) {
+                if (currentLevel.completed) {
+                    // Level completed successfully
+                    this.completeLevel();
+                } else {
+                    // Player fell through - game over
+                    this.endGame();
+                }
+            }
         }
 
         // Update camera
@@ -377,78 +367,31 @@ class Game {
         console.log(`Level ${this.currentLevel - 1} completed, starting level ${this.currentLevel}`);
     }
 
-    checkCollisions() {
-        if (this.levels.length > 0) {
-            return this.levels[0].checkCollision(this.player);
-        }
-        return false;
-    }
-
     endGame() {
-        if (this.gameOver) return;
-        
         console.log('Game over');
-        
-        // Set game over state
         this.gameOver = true;
         this.isRunning = false;
         
-        // Stop player
-        this.player.stop();
-        
         // Play game over sound
         this.audio.playGameOver();
-        this.audio.stopBackgroundMusic();
         
-        // Format time properly
-        const formattedTime = this.formatTime(this.elapsedTime);
-        
-        // Hide all other screens
-        if (this.startScreen) {
-            this.startScreen.classList.add('hidden');
-            this.startScreen.style.display = 'none';
-            this.startScreen.style.zIndex = '1';
-        }
-        
-        if (this.gameScreen) {
-            this.gameScreen.classList.add('hidden');
-            this.gameScreen.style.display = 'none';
-            this.gameScreen.style.zIndex = '1';
-        }
-        
-        // Show game over screen with dashboard
+        // Show game over screen
         if (this.gameOverScreen) {
             this.gameOverScreen.classList.remove('hidden');
             this.gameOverScreen.style.display = 'flex';
-            this.gameOverScreen.style.zIndex = '10';
-            this.gameOverScreen.style.position = 'absolute';
-            this.gameOverScreen.style.top = '0';
-            this.gameOverScreen.style.left = '0';
-            this.gameOverScreen.style.width = '100%';
-            this.gameOverScreen.style.height = '100%';
-            this.gameOverScreen.style.backgroundColor = 'rgba(0, 0, 0, 0.9)';
         }
         
-        // Show final score
-        const finalScoreElement = document.getElementById('final-score');
-        if (finalScoreElement) {
-            finalScoreElement.innerHTML = `
-                <p>Name: ${this.username || 'Anonymous'}</p>
-                <p>Level: ${this.currentLevel}</p>
-                <p>Time: ${formattedTime}</p>
-            `;
+        // Hide game screen
+        if (this.gameScreen) {
+            this.gameScreen.classList.add('hidden');
+            this.gameScreen.style.display = 'none';
         }
         
-        // Add score to leaderboard
-        this.leaderboard.addScore({
-            name: this.username || 'Anonymous',
-            level: this.currentLevel,
-            time: this.elapsedTime,
-            date: new Date().toISOString()
-        });
-        
-        // Display leaderboard
-        this.leaderboard.display();
+        // Update final score
+        const finalScore = document.getElementById('final-score');
+        if (finalScore) {
+            finalScore.textContent = this.currentLevel.toString();
+        }
     }
 
     formatTime(seconds) {
@@ -466,6 +409,13 @@ class Game {
         this.gameOver = false;
         this.currentLevel = 1;
         this.levelCompleted = false;
+        
+        // Stop music and hide music player
+        this.audio.stopBackgroundMusic();
+        const musicPlayer = document.getElementById('music-player');
+        if (musicPlayer) {
+            musicPlayer.style.display = 'none';
+        }
         
         // Hide game over screen
         if (this.gameOverScreen) {
@@ -523,12 +473,6 @@ class Game {
         if (this.scene) this.scene = null;
         
         console.log('Game disposed');
-    }
-
-    handleMute() {
-        if (this.audio) {
-            this.audio.toggleMute();
-        }
     }
 
     handleResize() {

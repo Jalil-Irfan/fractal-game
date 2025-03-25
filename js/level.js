@@ -1,238 +1,137 @@
 class Level {
     constructor(levelNumber) {
-        // Level properties
         this.levelNumber = levelNumber;
         this.platforms = [];
         this.holes = [];
-        this.completed = false;
+        this.startY = 10 + (levelNumber * 5);
+        this.bottomY = this.startY - 4;
+        this.width = 10;
+        this.depth = 10;
+        this.holeSize = 2;
+        this.currentLevel = levelNumber;
         
-        // Platform properties
-        this.platformWidth = 20;
-        this.platformHeight = 1;
-        this.platformDepth = 20;
-        this.platformGap = 20;
-        this.platformCount = 5;
-        
-        // Calculate start height for the level
-        this.startY = (this.levelNumber - 1) * (this.platformGap * this.platformCount);
-        
-        // Hole properties
-        this.holeRadius = 3; 
-        this.holePositions = [];
+        // Vary number of platforms based on level
+        this.numPlatforms = Math.min(3 + Math.floor(levelNumber / 2), 6);
     }
 
     init(scene) {
         this.createPlatforms(scene);
         this.createHoles(scene);
-        
-        console.log(`Level ${this.levelNumber} initialized with ${this.platformCount} platforms`);
     }
 
     createPlatforms(scene) {
-        // Create platforms from top to bottom
-        for (let i = 0; i < this.platformCount; i++) {
-            // Platform becomes more challenging with level progression
-            const platformWidth = Math.max(15, this.platformWidth - (this.levelNumber * 0.5));
-            const platformDepth = Math.max(15, this.platformDepth - (this.levelNumber * 0.5));
-            
-            // Platform Y position
-            const y = this.startY - (i * this.platformGap);
-            
-            // Create platform geometry
-            const geometry = scene.createPlatformGeometry(platformWidth, this.platformHeight, platformDepth);
-            
-            // Create platform material with different colors based on level
-            let platformColor;
-            switch (this.levelNumber % 5) {
-                case 1: platformColor = 0x4a90e2; break; // Blue
-                case 2: platformColor = 0x50C878; break; // Green
-                case 3: platformColor = 0xF5A623; break; // Orange
-                case 4: platformColor = 0xD0021B; break; // Red
-                case 0: platformColor = 0x9013FE; break; // Purple
-            }
-            
-            const material = new THREE.MeshPhongMaterial({ 
-                color: platformColor,
-                specular: 0x111111,
-                shininess: 30,
+        // Create main platform
+        const mainPlatformGeometry = scene.createPlatformGeometry(this.width, 1, this.depth);
+        const mainPlatformMaterial = new THREE.MeshPhongMaterial({
+            color: 0x4a90e2,
+            transparent: true,
+            opacity: 1
+        });
+        const mainPlatform = new THREE.Mesh(mainPlatformGeometry, mainPlatformMaterial);
+        mainPlatform.position.y = this.startY;
+        this.platforms.push(mainPlatform);
+        scene.add(mainPlatform);
+
+        // Create optical illusion platforms
+        for (let i = 0; i < this.numPlatforms - 1; i++) {
+            const platformGeometry = scene.createPlatformGeometry(this.width, 1, this.depth);
+            const platformMaterial = new THREE.MeshPhongMaterial({
+                color: 0x2ecc71,
                 transparent: true,
-                opacity: 0.9
+                opacity: 1
             });
+            const platform = new THREE.Mesh(platformGeometry, platformMaterial);
+            platform.position.y = this.startY - (i + 1);
             
-            // Create platform mesh
-            const platform = new THREE.Mesh(geometry, material);
-            platform.position.set(0, y, 0);
-            platform.receiveShadow = true;
+            // Rotate platforms to create optical illusion
+            const angle = (i * Math.PI) / (this.numPlatforms - 1);
+            platform.rotation.y = angle;
             
-            // Store platform data
-            this.platforms.push({
-                mesh: platform,
-                width: platformWidth,
-                height: this.platformHeight,
-                depth: platformDepth,
-                position: platform.position.clone()
-            });
-            
-            // Add to scene
+            this.platforms.push(platform);
             scene.add(platform);
         }
     }
 
     createHoles(scene) {
-        // Generate random holes in the platforms
-        for (let i = 0; i < this.platforms.length; i++) {
-            const platform = this.platforms[i];
-            
-            // For first platform in first level, make hole position more predictable
-            let holeX, holeZ;
-            if (this.levelNumber === 1 && i === 0) {
-                holeX = 0;
-                holeZ = 0;
-            } else {
-                // Random position within platform bounds
-                const maxOffset = (Math.min(platform.width, platform.depth) / 2) - this.holeRadius - 1;
-                holeX = (Math.random() * 2 - 1) * maxOffset;
-                holeZ = (Math.random() * 2 - 1) * maxOffset;
-            }
-            
-            // Store hole position relative to platform
-            this.holePositions.push({
-                x: holeX,
-                z: holeZ,
-                platformIndex: i
-            });
-            
-            // Calculate world position of hole
-            const holePosition = new THREE.Vector3(
-                platform.position.x + holeX,
-                platform.position.y + platform.height / 2,
-                platform.position.z + holeZ
+        // Create holes in the platforms
+        this.platforms.forEach((platform, index) => {
+            const holeGeometry = new THREE.BoxGeometry(
+                this.holeSize,
+                1.1, // Slightly larger than platform height
+                this.holeSize
             );
             
-            // Create hole (visual only, not physical)
-            const holeGeometry = new THREE.CircleGeometry(this.holeRadius, 32);
-            const holeMaterial = new THREE.MeshBasicMaterial({ 
+            const holeMaterial = new THREE.MeshPhongMaterial({
                 color: 0x000000,
                 transparent: true,
-                opacity: 0.7,
-                side: THREE.DoubleSide 
+                opacity: 0.8
             });
             
-            // Create hole mesh
             const hole = new THREE.Mesh(holeGeometry, holeMaterial);
-            hole.position.copy(holePosition);
-            hole.rotation.x = Math.PI / 2; // Make circle horizontal
+            hole.position.copy(platform.position);
             
-            // Store hole data
-            this.holes.push({
-                mesh: hole,
-                radius: this.holeRadius,
-                position: holePosition,
-                platformIndex: i
-            });
+            // Position holes to create optical illusion
+            if (index > 0) {
+                const angle = ((index - 1) * Math.PI) / (this.platforms.length - 1);
+                hole.position.x = Math.sin(angle) * 2;
+                hole.position.z = Math.cos(angle) * 2;
+            }
             
-            // Add to scene
+            this.holes.push(hole);
             scene.add(hole);
-        }
-    }
-
-    isCompleted() {
-        return this.completed;
+        });
     }
 
     checkCollision(player) {
-        if (!player) return false;
-        
         const playerBox = player.getBoundingBox();
-        
-        // Check platform collisions
-        for (let i = 0; i < this.platforms.length; i++) {
-            const platform = this.platforms[i];
-            
-            // Platform bounds
-            const platformMin = new THREE.Vector3(
-                platform.position.x - platform.width / 2,
-                platform.position.y - platform.height / 2,
-                platform.position.z - platform.depth / 2
-            );
-            
-            const platformMax = new THREE.Vector3(
-                platform.position.x + platform.width / 2,
-                platform.position.y + platform.height / 2,
-                platform.position.z + platform.depth / 2
-            );
-            
-            // Check if player is above platform
-            if (playerBox.min.y <= platformMax.y && 
-                playerBox.max.y >= platformMin.y &&
-                playerBox.min.x <= platformMax.x && 
-                playerBox.max.x >= platformMin.x &&
-                playerBox.min.z <= platformMax.z && 
-                playerBox.max.z >= platformMin.z) {
-                
-                // Check if player's center is inside hole
-                if (this.checkHoleCollision(player.position, i)) {
-                    // Player is in the hole - continue falling
-                    if (i === this.platforms.length - 1) {
-                        // Player made it through the bottom platform - level completed!
-                        this.completed = true;
-                        return true;
-                    }
-                } else {
-                    // Player hit the platform - bounce
-                    if (player.velocity.y < 0) {
+        if (!playerBox) return false;
+
+        // Check collision with platforms
+        for (const platform of this.platforms) {
+            const platformBox = new THREE.Box3().setFromObject(platform);
+            if (playerBox.intersectsBox(platformBox)) {
+                // Check if player is above the platform
+                if (player.position.y > platform.position.y) {
+                    // Check if player is in a hole
+                    const isInHole = this.checkHoleCollision(player.position);
+                    if (!isInHole) {
+                        // Calculate collision normal
                         const normal = new THREE.Vector3(0, 1, 0);
                         player.applyBounce(normal);
+                        return false;
                     }
                 }
             }
         }
-        
-        // Level not completed
+
+        // Check if player has fallen below the level
+        if (player.position.y < this.bottomY) {
+            return true;
+        }
+
         return false;
     }
 
-    checkHoleCollision(position, platformIndex) {
-        // Find hole for this platform
-        const hole = this.holes.find(h => h.platformIndex === platformIndex);
-        if (!hole) return false;
-        
-        // Create horizontal vector from hole center to player
-        const holeCenter = new THREE.Vector2(hole.position.x, hole.position.z);
-        const playerPos = new THREE.Vector2(position.x, position.z);
-        
-        // Check if player is within hole radius
-        return holeCenter.distanceTo(playerPos) < hole.radius;
-    }
-
-    dispose(scene) {
-        // Remove all meshes from scene
-        this.platforms.forEach(platform => {
-            scene.remove(platform.mesh);
-        });
-        
-        this.holes.forEach(hole => {
-            scene.remove(hole.mesh);
-        });
-        
-        // Clear arrays
-        this.platforms = [];
-        this.holes = [];
-    }
-
-    getVisibleHolePosition() {
-        // Return the position of the next visible hole
-        if (this.holes.length > 0) {
-            return this.holes[0].position.clone();
+    checkHoleCollision(position) {
+        // Check if player is in any hole
+        for (const hole of this.holes) {
+            const holeBox = new THREE.Box3().setFromObject(hole);
+            if (holeBox.containsPoint(position)) {
+                return true;
+            }
         }
-        return null;
+        return false;
     }
 
     update() {
-        // Add any level animation or updates here
-        // For example, rotate the holes slightly to make them more visible
-        this.holes.forEach(hole => {
-            hole.mesh.rotation.z += 0.005;
-        });
+        // Remove the floating animation to keep platforms stable
+    }
+
+    dispose(scene) {
+        // Remove all platforms and holes from the scene
+        this.platforms.forEach(platform => scene.remove(platform));
+        this.holes.forEach(hole => scene.remove(hole));
+        this.platforms = [];
+        this.holes = [];
     }
 }
