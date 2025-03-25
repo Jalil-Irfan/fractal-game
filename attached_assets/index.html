@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fractal Drop</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.10.1/nipplejs.min.js"></script>
+    <style>
+        .ad-prompt {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .ad-content {
+            background: #2a2a2a;
+            padding: 2rem;
+            border-radius: 10px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .ad-content h3 {
+            color: #4a90e2;
+            margin-bottom: 1rem;
+        }
+
+        .ad-content button {
+            margin: 0.5rem;
+            padding: 0.5rem 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="start-screen" class="screen">
+            <h1>Fractal Drop</h1>
+            <div class="instructions">
+                <h2>How to Play</h2>
+                <p>Guide your crystal seed through the optical illusion tower:</p>
+                <ul>
+                    <li>Use arrow keys or mouse to rotate the camera</li>
+                    <li>Find the correct angle where holes align</li>
+                    <li>Let the seed fall through the holes</li>
+                    <li>Reach the lowest level possible!</li>
+                </ul>
+                <div class="controls">
+                    <h3>Controls</h3>
+                    <p>Desktop: Arrow keys / Mouse drag</p>
+                    <p>Mobile: Touch and drag / Virtual joystick</p>
+                </div>
+            </div>
+            <div class="start-form">
+                <input type="text" id="username" placeholder="Enter your name" maxlength="20">
+                <button id="start-button">Start Game</button>
+            </div>
+        </div>
+
+        <div id="game-screen" class="screen hidden">
+            <div id="score">Level: <span id="level-count">1</span></div>
+            <div id="timer">Time: <span id="time-count">0</span>s</div>
+            <div id="mobile-controls"></div>
+        </div>
+
+        <div id="game-over-screen" class="screen hidden">
+            <h2>Game Over</h2>
+            <div id="final-score"></div>
+            <div id="leaderboard"></div>
+            <button id="play-again">Play Again</button>
+        </div>
+    </div>
+
+    <script src="js/monetization.js"></script>
+    <script src="js/game.js"></script>
+    <script src="js/scene.js"></script>
+    <script src="js/player.js"></script>
+    <script src="js/level.js"></script>
+    <script src="js/controls.js"></script>
+    <script src="js/audio.js"></script>
+    <script src="js/leaderboard.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html> 

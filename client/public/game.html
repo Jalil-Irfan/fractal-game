@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fractal Drop - Simple Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+        
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        #start-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            padding: 20px;
+        }
+        
+        .btn {
+            background-color: #4a90e2;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 20px;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        #error-log {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+            border-radius: 5px;
+            max-width: 80%;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="start-screen">
+            <h1>Fractal Drop - Simple Test</h1>
+            <div>
+                <label for="username">Enter Your Name:</label>
+                <input type="text" id="username" placeholder="Name">
+            </div>
+            <button id="start-button" class="btn">Start Game</button>
+        </div>
+        
+        <div id="game-screen" class="hidden">
+            <!-- Game will render here -->
+        </div>
+        
+        <div id="game-over-screen" class="hidden">
+            <h1>Game Over</h1>
+            <div id="final-score"></div>
+            <button id="play-again" class="btn">Play Again</button>
+        </div>
+        
+        <div id="error-log"></div>
+    </div>
+    
+    <script>
+        // Custom error handler to capture errors
+        window.onerror = function(message, source, lineno, colno, error) {
+            const errorLog = document.getElementById('error-log');
+            const errorMsg = document.createElement('div');
+            errorMsg.textContent = `Error: ${message} at line ${lineno}:${colno}`;
+            errorMsg.style.color = 'red';
+            errorLog.appendChild(errorMsg);
+            console.error(message, error);
+            return true;
+        };
+        
+        // Load libraries and game files
+        function loadScript(src, callback) {
+            const script = document.createElement('script');
+            script.src = src;
+            script.onload = callback;
+            script.onerror = function() {
+                const errorLog = document.getElementById('error-log');
+                const errorMsg = document.createElement('div');
+                errorMsg.textContent = `Failed to load script: ${src}`;
+                errorMsg.style.color = 'red';
+                errorLog.appendChild(errorMsg);
+            };
+            document.body.appendChild(script);
+        }
+        
+        // Load Three.js first, then game files in sequence
+        loadScript('https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js', function() {
+            console.log('Three.js loaded');
+            loadScript('js/scene.js', function() {
+                console.log('scene.js loaded');
+                loadScript('js/player.js', function() {
+                    console.log('player.js loaded');
+                    loadScript('js/level.js', function() {
+                        console.log('level.js loaded');
+                        loadScript('js/controls.js', function() {
+                            console.log('controls.js loaded');
+                            loadScript('js/audio.js', function() {
+                                console.log('audio.js loaded');
+                                loadScript('js/leaderboard.js', function() {
+                                    console.log('leaderboard.js loaded');
+                                    loadScript('js/monetization.js', function() {
+                                        console.log('monetization.js loaded');
+                                        loadScript('js/game.js', function() {
+                                            console.log('game.js loaded');
+                                            loadScript('js/main.js', function() {
+                                                console.log('main.js loaded');
+                                                console.log('All scripts loaded');
+                                            });
+                                        });
+                                    });
+                                });
+                            });
+                        });
+                    });
+                });
+            });
+        });
+    </script>
+</body>
+</html>

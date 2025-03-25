@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fractal Drop</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Fallback styles in case styles.css doesn't load */
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+        
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        .btn {
+            background-color: #4a90e2;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 20px;
+        }
+        
+        #error-log {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+            border-radius: 5px;
+            max-width: 80%;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+        
+        .hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            display: flex;
+            gap: 20px;
+        }
+        
+        .hud-item {
+            background: rgba(0,0,0,0.5);
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+        
+        .icon-button {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        
+        .instructions {
+            max-width: 600px;
+            margin-top: 30px;
+            text-align: center;
+        }
+        
+        #leaderboard {
+            margin-top: 30px;
+            width: 100%;
+            max-width: 600px;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <!-- Start Screen -->
+        <div id="start-screen" class="screen">
+            <h1>Fractal Drop</h1>
+            <div class="form-group">
+                <label for="username">Enter Your Name:</label>
+                <input type="text" id="username" placeholder="Name">
+            </div>
+            <button id="start-button" class="btn">Start Game</button>
+            
+            <div class="instructions">
+                <h2>How to Play</h2>
+                <p>Guide the crystal through the holes in each platform.</p>
+                <p>Controls: Use arrow keys or A/D to rotate the camera.</p>
+                <p>Try to reach the highest level possible!</p>
+            </div>
+        </div>
+        
+        <!-- Game Screen -->
+        <div id="game-screen" class="screen hidden">
+            <div class="hud">
+                <div class="hud-item">
+                    <span class="label">Level:</span>
+                    <span id="level-count">1</span>
+                </div>
+                <div class="hud-item">
+                    <span class="label">Time:</span>
+                    <span id="time-count">0</span>
+                </div>
+                <button id="mute-button" class="icon-button">🔊</button>
+            </div>
+            
+            <div id="mobile-controls" class="hidden"></div>
+        </div>
+        
+        <!-- Game Over Screen -->
+        <div id="game-over-screen" class="screen hidden">
+            <h1>Game Over</h1>
+            <div id="final-score">
+                <!-- This will be filled dynamically -->
+            </div>
+            <button id="play-again" class="btn">Play Again</button>
+            
+            <div id="leaderboard">
+                <h2>Leaderboard</h2>
+                <!-- Leaderboard will be filled dynamically -->
+            </div>
+        </div>
+        
+        <!-- Error log for debugging -->
+        <div id="error-log"></div>
+    </div>
+    
+    <!-- Script loading with improved error handling -->
+    <script>
+        // Custom error handler to capture errors
+        window.onerror = function(message, source, lineno, colno, error) {
+            const errorLog = document.getElementById('error-log');
+            const errorMsg = document.createElement('div');
+            errorMsg.textContent = `Error: ${message} at line ${lineno}:${colno}`;
+            errorMsg.style.color = 'red';
+            errorLog.appendChild(errorMsg);
+            console.error(message, error);
+            return true;
+        };
+        
+        // Load scripts with better error handling
+        function loadScript(src, onSuccess, onError) {
+            const script = document.createElement('script');
+            script.src = src;
+            script.onload = onSuccess;
+            script.onerror = onError || function() {
+                const errorLog = document.getElementById('error-log');
+                const errorMsg = document.createElement('div');
+                errorMsg.textContent = `Failed to load script: ${src}`;
+                errorMsg.style.color = 'red';
+                errorLog.appendChild(errorMsg);
+            };
+            document.body.appendChild(script);
+        }
+        
+        // Sequential script loading with fallbacks
+        loadScript('https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js', function() {
+            console.log('Three.js loaded');
+            
+            // Optional: Load nipplejs for mobile controls
+            loadScript('https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.10.0/nipplejs.min.js', function() {
+                console.log('NippleJS loaded');
+                loadGameScripts();
+            }, function() {
+                // Continue even if nipplejs fails
+                console.warn('NippleJS failed to load, continuing without mobile joystick support');
+                loadGameScripts();
+            });
+        });
+        
+        function loadGameScripts() {
+            // Try to load scene.js (the first game script)
+            function attemptLoadScene() {
+                const errorLog = document.getElementById('error-log');
+                errorLog.innerHTML += '<div>Attempting to load game scripts...</div>';
+                
+                // First try the root js/ path
+                loadScript('js/scene.js', function() {
+                    console.log('scene.js loaded');
+                    continueLoading('js/');
+                }, function() {
+                    // If failed, try client/public/js/ path
+                    errorLog.innerHTML += '<div>Trying alternate path for scripts...</div>';
+                    loadScript('client/public/js/scene.js', function() {
+                        console.log('scene.js loaded from alternate path');
+                        continueLoading('client/public/js/');
+                    }, function() {
+                        // If both fail, show error
+                        errorLog.innerHTML += '<div style="color:red">Failed to load scene.js from any path</div>';
+                    });
+                });
+            }
+            
+            // Continue loading the rest of the scripts
+            function continueLoading(basePath) {
+                loadScript(basePath + 'player.js', function() {
+                    loadScript(basePath + 'level.js', function() {
+                        loadScript(basePath + 'controls.js', function() {
+                            loadScript(basePath + 'audio.js', function() {
+                                loadScript(basePath + 'leaderboard.js', function() {
+                                    loadScript(basePath + 'monetization.js', function() {
+                                        loadScript(basePath + 'game.js', function() {
+                                            loadScript(basePath + 'main.js', function() {
+                                                console.log('All game scripts loaded successfully');
+                                                const errorLog = document.getElementById('error-log');
+                                                errorLog.innerHTML += '<div style="color:green">All game scripts loaded successfully!</div>';
+                                            });
+                                        });
+                                    });
+                                });
+                            });
+                        });
+                    });
+                });
+            }
+            
+            // Start loading game scripts
+            attemptLoadScene();
+        }
+    </script>
+</body>
+</html>

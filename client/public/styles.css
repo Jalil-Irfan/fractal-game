@@ -1,0 +1,263 @@
+/* Global Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #121212;
+    color: #ffffff;
+    overflow: hidden;
+}
+
+/* Game Container */
+#game-container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    background: linear-gradient(to bottom, #1a1a2e, #16213e);
+}
+
+/* Screen Styles */
+.screen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 1rem;
+    z-index: 100;
+    background: rgba(0, 0, 0, 0.7);
+}
+
+.hidden {
+    display: none;
+}
+
+/* Start Screen */
+#start-screen h1 {
+    font-size: 3rem;
+    color: #4a90e2;
+    margin-bottom: 2rem;
+    text-shadow: 0 0 10px rgba(74, 144, 226, 0.5);
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+    width: 100%;
+    max-width: 300px;
+}
+
+label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+}
+
+input {
+    width: 100%;
+    padding: 0.75rem;
+    font-size: 1rem;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    color: #ffffff;
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    font-size: 1.1rem;
+    background-color: #4a90e2;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.btn:hover {
+    background-color: #357ABD;
+}
+
+.instructions {
+    margin-top: 2rem;
+    padding: 1rem;
+    max-width: 500px;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 8px;
+    text-align: center;
+}
+
+.instructions h2 {
+    color: #4a90e2;
+    margin-bottom: 1rem;
+}
+
+.instructions p {
+    margin-bottom: 0.5rem;
+    font-size: 1rem;
+}
+
+/* Game HUD */
+.hud {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    right: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 8px;
+    z-index: 10;
+}
+
+.hud-item {
+    display: flex;
+    align-items: center;
+    margin-right: 1rem;
+}
+
+.label {
+    font-size: 1rem;
+    margin-right: 0.5rem;
+    color: #999;
+}
+
+#level-count, #time-count {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #4a90e2;
+}
+
+.icon-button {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: #4a90e2;
+    cursor: pointer;
+}
+
+/* Mobile Controls */
+#mobile-controls {
+    position: absolute;
+    bottom: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 150px;
+    height: 150px;
+    z-index: 10;
+}
+
+/* Game Over Screen */
+#game-over-screen h1 {
+    font-size: 3rem;
+    color: #e24a4a;
+    margin-bottom: 2rem;
+    text-shadow: 0 0 10px rgba(226, 74, 74, 0.5);
+}
+
+#final-score {
+    margin-bottom: 1.5rem;
+    font-size: 1.2rem;
+    text-align: center;
+}
+
+#leaderboard {
+    max-width: 600px;
+    width: 100%;
+    margin-top: 2rem;
+}
+
+#leaderboard h2 {
+    text-align: center;
+    margin-bottom: 1rem;
+    color: #4a90e2;
+}
+
+/* Ad Prompt */
+.ad-prompt {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 200;
+}
+
+.ad-content {
+    background: #16213e;
+    padding: 2rem;
+    border-radius: 8px;
+    text-align: center;
+    max-width: 400px;
+}
+
+.ad-content h3 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    color: #4a90e2;
+}
+
+.ad-content p {
+    margin-bottom: 1.5rem;
+}
+
+.ad-content button {
+    margin: 0 0.5rem;
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+#watch-ad-btn {
+    background-color: #4a90e2;
+    color: white;
+}
+
+#skip-ad-btn {
+    background-color: #555;
+    color: white;
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+    #start-screen h1, #game-over-screen h1 {
+        font-size: 2rem;
+    }
+    
+    .instructions {
+        font-size: 0.9rem;
+    }
+    
+    .hud {
+        padding: 0.3rem 0.7rem;
+    }
+    
+    .label {
+        font-size: 0.9rem;
+    }
+    
+    #level-count, #time-count {
+        font-size: 1rem;
+    }
+}
+
+@media (max-height: 600px) {
+    .instructions {
+        margin-top: 1rem;
+        padding: 0.5rem;
+    }
+}

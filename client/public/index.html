@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fractal Drop</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="game-container">
+        <!-- Start Screen -->
+        <div id="start-screen" class="screen">
+            <h1>Fractal Drop</h1>
+            <div class="form-group">
+                <label for="username">Enter Your Name:</label>
+                <input type="text" id="username" placeholder="Name">
+            </div>
+            <button id="start-button" class="btn">Start Game</button>
+            
+            <div class="instructions">
+                <h2>How to Play</h2>
+                <p>Guide the crystal through the holes in each platform.</p>
+                <p>Controls: Use arrow keys or A/D to rotate the camera.</p>
+                <p>Try to reach the highest level possible!</p>
+            </div>
+        </div>
+        
+        <!-- Game Screen -->
+        <div id="game-screen" class="screen hidden">
+            <div class="hud">
+                <div class="hud-item">
+                    <span class="label">Level:</span>
+                    <span id="level-count">1</span>
+                </div>
+                <div class="hud-item">
+                    <span class="label">Time:</span>
+                    <span id="time-count">0</span>
+                </div>
+                <button id="mute-button" class="icon-button">🔊</button>
+            </div>
+            
+            <div id="mobile-controls" class="hidden"></div>
+        </div>
+        
+        <!-- Game Over Screen -->
+        <div id="game-over-screen" class="screen hidden">
+            <h1>Game Over</h1>
+            <div id="final-score">
+                <!-- This will be filled dynamically -->
+            </div>
+            <button id="play-again" class="btn">Play Again</button>
+            
+            <div id="leaderboard">
+                <h2>Leaderboard</h2>
+                <!-- Leaderboard will be filled dynamically -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Load Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <!-- Optional: Load nipplejs for mobile controls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.10.0/nipplejs.min.js"></script>
+    
+    <!-- Game Scripts -->
+    <script src="js/scene.js"></script>
+    <script src="js/player.js"></script>
+    <script src="js/level.js"></script>
+    <script src="js/controls.js"></script>
+    <script src="js/audio.js"></script>
+    <script src="js/leaderboard.js"></script>
+    <script src="js/monetization.js"></script>
+    <script src="js/game.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
