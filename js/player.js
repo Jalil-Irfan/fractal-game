@@ -18,6 +18,10 @@ class Player {
         // Game properties
         this.isAlive = true;
         this.score = 0;
+
+        this.moveDirection = new THREE.Vector3();
+        this.isJumping = false;
+        this.jumpForce = 10;
     }
 
     init(scene) {
@@ -138,19 +142,8 @@ class Player {
     }
 
     getBoundingBox() {
-        const halfSize = this.size * 0.7; // Slightly smaller for better gameplay
-        return {
-            min: new THREE.Vector3(
-                this.position.x - halfSize,
-                this.position.y - halfSize,
-                this.position.z - halfSize
-            ),
-            max: new THREE.Vector3(
-                this.position.x + halfSize,
-                this.position.y + halfSize,
-                this.position.z + halfSize
-            )
-        };
+        if (!this.mesh) return null;
+        return new THREE.Box3().setFromObject(this.mesh);
     }
     
     addBonusPoints(points) {

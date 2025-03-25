@@ -91,22 +91,18 @@ class Game {
             this.setupEventListeners();
             console.log('Event listeners setup complete');
             
-            // Check if we're coming from a portal and Portal class is defined
-            const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.get('portal') === 'true' && typeof Portal !== 'undefined') {
-                // Create entry portal at player spawn position
-                const entryPortal = new Portal(
-                    this.scene,
-                    new THREE.Vector3(0, this.levels[0]?.startY + 5 || 5, 0),
-                    new THREE.Euler(0, 0, 0),
-                    true
-                );
+            // Create portals if portal parameter is present
+            if (new URLSearchParams(window.location.search).get('portal')) {
+                // Create entry portal at spawn point
+                const entryPortal = new Portal(this.scene, new THREE.Vector3(SPAWN_POINT_X, SPAWN_POINT_Y, SPAWN_POINT_Z), new THREE.Euler(0.35, 0, 0), true);
                 entryPortal.init();
                 this.portals.push(entryPortal);
-                console.log('Entry portal created');
-            } else if (urlParams.get('portal') === 'true') {
-                console.warn('Portal class not defined, skipping entry portal creation');
             }
+            
+            // Create exit portal
+            const exitPortal = new Portal(this.scene, new THREE.Vector3(-200, 200, -300), new THREE.Euler(0.35, 0, 0), false);
+            exitPortal.init();
+            this.portals.push(exitPortal);
             
             console.log('Game initialized successfully');
         } catch (error) {
@@ -284,24 +280,48 @@ class Game {
         if (!this.isRunning) return;
 
         // Update player
-        this.player.update(deltaTime);
+        if (this.player) {
+            this.player.update(deltaTime);
+            
+            // Check if player has fallen out of bounds
+            if (this.player.mesh.position.y < -100) { // Adjust this value based on your game's scale
+                this.endGame();
+                return;
+            }
+        }
 
         // Update portals
         this.portals.forEach(portal => {
             portal.update();
-            
-            // Check for portal collision
-            if (portal.checkCollision(this.player.mesh.position)) {
-                portal.handlePortalEnter();
-            }
         });
 
-        // Update levels
-        this.levels.forEach(level => level.update(deltaTime));
+        // Check portal collisions
+        if (this.player) {
+            this.portals.forEach(portal => {
+                if (portal.checkCollision(this.player.mesh)) {
+                    portal.handlePortalEnter();
+                }
+            });
+        }
 
-        // Check for level completion
-        if (!this.levelCompleted && this.levels[this.currentLevel - 1]?.checkCollision(this.player)) {
+        // Update levels
+        this.levels.forEach(level => {
+            level.update(deltaTime);
+        });
+
+        // Check level completion
+        if (this.levels.length > 0 && this.levels[0].checkCollision(this.player)) {
             this.completeLevel();
+        }
+
+        // Update camera
+        if (this.controls) {
+            this.controls.update();
+        }
+
+        // Update monetization
+        if (this.monetization) {
+            this.monetization.update();
         }
 
         // Update UI
