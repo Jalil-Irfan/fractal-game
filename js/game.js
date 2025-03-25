@@ -96,15 +96,30 @@ class Game {
         // Set up event listeners
         this.setupEventListeners();
 
-        // Show start screen initially
+        // On initial load/refresh, only show login screen
         if (this.startScreen) {
             this.startScreen.classList.remove('hidden');
+            this.startScreen.style.display = 'flex';
+            this.startScreen.style.zIndex = '10';
+            this.startScreen.style.position = 'absolute';
+            this.startScreen.style.top = '0';
+            this.startScreen.style.left = '0';
+            this.startScreen.style.width = '100%';
+            this.startScreen.style.height = '100%';
+            this.startScreen.style.backgroundColor = 'rgba(0, 0, 0, 0.9)';
         }
+        
+        // Hide other screens
         if (this.gameScreen) {
             this.gameScreen.classList.add('hidden');
+            this.gameScreen.style.display = 'none';
+            this.gameScreen.style.zIndex = '1';
         }
+        
         if (this.gameOverScreen) {
             this.gameOverScreen.classList.add('hidden');
+            this.gameOverScreen.style.display = 'none';
+            this.gameOverScreen.style.zIndex = '1';
         }
     }
 
@@ -208,6 +223,7 @@ class Game {
         // Hide start screen, show game screen
         if (this.startScreen) {
             this.startScreen.classList.add('hidden');
+            this.startScreen.style.display = 'none';
             console.log('Start screen hidden');
         } else {
             console.error('Start screen element not found');
@@ -215,6 +231,7 @@ class Game {
         
         if (this.gameScreen) {
             this.gameScreen.classList.remove('hidden');
+            this.gameScreen.style.display = 'flex';
             console.log('Game screen shown');
         } else {
             console.error('Game screen element not found');
@@ -383,23 +400,48 @@ class Game {
         this.audio.playGameOver();
         this.audio.stopBackgroundMusic();
         
-        // Show game over screen
-        if (this.gameScreen) this.gameScreen.classList.add('hidden');
-        if (this.gameOverScreen) this.gameOverScreen.classList.remove('hidden');
+        // Format time properly
+        const formattedTime = this.formatTime(this.elapsedTime);
+        
+        // Hide all other screens
+        if (this.startScreen) {
+            this.startScreen.classList.add('hidden');
+            this.startScreen.style.display = 'none';
+            this.startScreen.style.zIndex = '1';
+        }
+        
+        if (this.gameScreen) {
+            this.gameScreen.classList.add('hidden');
+            this.gameScreen.style.display = 'none';
+            this.gameScreen.style.zIndex = '1';
+        }
+        
+        // Show game over screen with dashboard
+        if (this.gameOverScreen) {
+            this.gameOverScreen.classList.remove('hidden');
+            this.gameOverScreen.style.display = 'flex';
+            this.gameOverScreen.style.zIndex = '10';
+            this.gameOverScreen.style.position = 'absolute';
+            this.gameOverScreen.style.top = '0';
+            this.gameOverScreen.style.left = '0';
+            this.gameOverScreen.style.width = '100%';
+            this.gameOverScreen.style.height = '100%';
+            this.gameOverScreen.style.backgroundColor = 'rgba(0, 0, 0, 0.9)';
+        }
         
         // Show final score
         const finalScoreElement = document.getElementById('final-score');
         if (finalScoreElement) {
             finalScoreElement.innerHTML = `
-                <p>Name: ${this.username}</p>
+                <p>Name: ${this.username || 'Anonymous'}</p>
                 <p>Level: ${this.currentLevel}</p>
-                <p>Time: ${Math.floor(this.elapsedTime)} seconds</p>
+                <p>Time: ${formattedTime}</p>
             `;
         }
         
         // Add score to leaderboard
         this.leaderboard.addScore({
-            name: this.username,
+            name: this.username || 'Anonymous',
             level: this.currentLevel,
             time: this.elapsedTime,
             date: new Date().toISOString()
@@ -407,6 +449,14 @@ class Game {
         
         // Display leaderboard
         this.leaderboard.display();
+    }
+
+    formatTime(seconds) {
+        if (!Number.isFinite(seconds)) return '0:00';
+        
+        const minutes = Math.floor(seconds / 60);
+        const remainingSeconds = Math.floor(seconds % 60);
+        return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
     }
 
     restart() {
@@ -418,10 +468,30 @@ class Game {
         this.levelCompleted = false;
         
         // Hide game over screen
-        if (this.gameOverScreen) this.gameOverScreen.classList.add('hidden');
+        if (this.gameOverScreen) {
+            this.gameOverScreen.classList.add('hidden');
+            this.gameOverScreen.style.display = 'none';
+            this.gameOverScreen.style.zIndex = '1';
+        }
         
-        // Start game again
-        this.start();
+        // Show start screen
+        if (this.startScreen) {
+            this.startScreen.classList.remove('hidden');
+            this.startScreen.style.display = 'flex';
+            this.startScreen.style.zIndex = '10';
+            this.startScreen.style.position = 'absolute';
+            this.startScreen.style.top = '0';
+            this.startScreen.style.left = '0';
+            this.startScreen.style.width = '100%';
+            this.startScreen.style.height = '100%';
+            this.startScreen.style.backgroundColor = 'rgba(0, 0, 0, 0.9)';
+        }
+        
+        // Reset username input
+        const usernameInput = document.getElementById('username');
+        if (usernameInput) {
+            usernameInput.value = '';
+        }
     }
 
     dispose() {
