@@ -134,6 +134,10 @@ class Level {
         }
     }
 
+    isCompleted() {
+        return this.completed;
+    }
+
     checkCollision(player) {
         if (!player) return false;
         
@@ -169,6 +173,7 @@ class Level {
                     // Player is in the hole - continue falling
                     if (i === this.platforms.length - 1) {
                         // Player made it through the bottom platform - level completed!
+                        this.completed = true;
                         return true;
                     }
                 } else {

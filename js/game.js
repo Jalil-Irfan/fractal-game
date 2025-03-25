@@ -1,5 +1,7 @@
 class Game {
     constructor() {
+        console.log('Game constructor called');
+        
         // Game state
         this.isRunning = false;
         this.currentLevel = 1;
@@ -18,6 +20,7 @@ class Game {
         this.controls = null;
         this.leaderboard = null;
         this.monetization = null;
+        this.portals = [];
         
         // DOM elements
         this.startScreen = document.getElementById('start-screen');
@@ -26,6 +29,15 @@ class Game {
         this.levelCountElement = document.getElementById('level-count');
         this.timeCountElement = document.getElementById('time-count');
 
+        console.log('DOM elements:', {
+            startScreen: this.startScreen,
+            gameScreen: this.gameScreen,
+            gameOverScreen: this.gameOverScreen,
+            levelCountElement: this.levelCountElement,
+            timeCountElement: this.timeCountElement
+        });
+
+        // Initialize immediately
         this.init();
     }
 
@@ -34,44 +46,130 @@ class Game {
         
         // Create game components
         this.scene = new Scene();
+        if (!this.scene) {
+            console.error('Failed to create scene');
+            return;
+        }
+        console.log('Scene created');
+
         this.player = new Player();
+        if (!this.player) {
+            console.error('Failed to create player');
+            return;
+        }
+        console.log('Player created');
+
         this.audio = new AudioManager();
+        if (!this.audio) {
+            console.error('Failed to create audio manager');
+            return;
+        }
+        console.log('Audio manager created');
+
         this.leaderboard = new Leaderboard();
+        if (!this.leaderboard) {
+            console.error('Failed to create leaderboard');
+            return;
+        }
+        console.log('Leaderboard created');
         
         // Initialize components
-        this.audio.init();
-        this.player.init(this.scene);
-        this.controls = new Controls(this.scene.camera);
-        this.monetization = new Monetization(this.scene.scene);
-        
-        // Setup event listeners
-        this.setupEventListeners();
-        
-        console.log('Game initialized');
+        try {
+            this.audio.init();
+            console.log('Audio initialized');
+            
+            this.player.init(this.scene);
+            console.log('Player initialized');
+            
+            this.controls = new Controls(this.scene.camera);
+            console.log('Controls initialized');
+            
+            this.monetization = new Monetization(this.scene.scene);
+            console.log('Monetization initialized');
+            
+            // Setup event listeners
+            this.setupEventListeners();
+            console.log('Event listeners setup complete');
+            
+            // Check if we're coming from a portal and Portal class is defined
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('portal') === 'true' && typeof Portal !== 'undefined') {
+                // Create entry portal at player spawn position
+                const entryPortal = new Portal(
+                    this.scene,
+                    new THREE.Vector3(0, this.levels[0]?.startY + 5 || 5, 0),
+                    new THREE.Euler(0, 0, 0),
+                    true
+                );
+                entryPortal.init();
+                this.portals.push(entryPortal);
+                console.log('Entry portal created');
+            } else if (urlParams.get('portal') === 'true') {
+                console.warn('Portal class not defined, skipping entry portal creation');
+            }
+            
+            console.log('Game initialized successfully');
+        } catch (error) {
+            console.error('Error during game initialization:', error);
+        }
     }
 
     setupEventListeners() {
+        console.log('Setting up event listeners...');
+        
         // Start button click
         const startButton = document.getElementById('start-button');
+        console.log('Start button element:', startButton);
+        
         if (startButton) {
-            startButton.addEventListener('click', () => {
+            startButton.addEventListener('click', (e) => {
+                console.log('Start button clicked!');
                 const usernameInput = document.getElementById('username');
+                console.log('Username input element:', usernameInput);
+                
                 if (usernameInput && usernameInput.value.trim() !== '') {
                     this.username = usernameInput.value.trim();
+                    console.log('Starting game with username:', this.username);
                     this.start();
                 } else {
+                    console.log('No username entered');
                     alert('Please enter your name');
                 }
             });
+            console.log('Start button click listener added');
+        } else {
+            console.error('Start button not found in DOM');
         }
         
         // Play again button click
         const playAgainButton = document.getElementById('play-again');
+        console.log('Play again button element:', playAgainButton);
+        
         if (playAgainButton) {
             playAgainButton.addEventListener('click', () => {
+                console.log('Play again button clicked');
                 this.restart();
             });
+            console.log('Play again button click listener added');
         }
+
+        // Mute button click
+        const muteButton = document.getElementById('mute-button');
+        console.log('Mute button element:', muteButton);
+        
+        if (muteButton) {
+            muteButton.addEventListener('click', () => {
+                console.log('Mute button clicked');
+                const isMuted = this.audio.toggleMute();
+                muteButton.textContent = isMuted ? '🔇' : '🔊';
+                muteButton.classList.toggle('muted', isMuted);
+            });
+            console.log('Mute button click listener added');
+        } else {
+            console.error('Mute button not found in DOM');
+        }
+        
+        console.log('Event listeners setup complete');
     }
 
     createInitialLevels() {
@@ -88,16 +186,45 @@ class Game {
         if (this.levelCountElement) {
             this.levelCountElement.textContent = this.currentLevel.toString();
         }
+
+        // Add exit portal at the end of the level if Portal class is defined
+        if (typeof Portal !== 'undefined') {
+            const exitPortal = new Portal(
+                this.scene,
+                new THREE.Vector3(0, firstLevel.endY + 5, 0),
+                new THREE.Euler(0, 0, 0),
+                false
+            );
+            exitPortal.init();
+            this.portals.push(exitPortal);
+            console.log('Exit portal created');
+        } else {
+            console.warn('Portal class not defined, skipping portal creation');
+        }
     }
 
     start() {
-        if (this.isRunning) return;
+        console.log('Start method called');
         
-        console.log('Starting game');
+        if (this.isRunning) {
+            console.log('Game is already running');
+            return;
+        }
         
         // Hide start screen, show game screen
-        if (this.startScreen) this.startScreen.classList.add('hidden');
-        if (this.gameScreen) this.gameScreen.classList.remove('hidden');
+        if (this.startScreen) {
+            this.startScreen.classList.add('hidden');
+            console.log('Start screen hidden');
+        } else {
+            console.error('Start screen element not found');
+        }
+        
+        if (this.gameScreen) {
+            this.gameScreen.classList.remove('hidden');
+            console.log('Game screen shown');
+        } else {
+            console.error('Game screen element not found');
+        }
         
         // Create initial levels
         this.createInitialLevels();
@@ -106,6 +233,9 @@ class Game {
         if (this.levels.length > 0) {
             const firstLevel = this.levels[0];
             this.player.reset(firstLevel.startY + 5);
+            console.log('Player position reset');
+        } else {
+            console.error('No levels created');
         }
         
         // Reset game state
@@ -117,13 +247,16 @@ class Game {
         this.elapsedTime = 0;
         
         // Start audio
-        this.audio.startBackgroundMusic();
+        if (this.audio) {
+            this.audio.startBackgroundMusic();
+            console.log('Background music started');
+        }
         
         // Start game loop
         this.isRunning = true;
         this.gameLoop();
         
-        console.log('Game started');
+        console.log('Game started successfully');
     }
 
     gameLoop() {
@@ -148,44 +281,30 @@ class Game {
     }
 
     update(deltaTime) {
-        if (this.gameOver) return;
-        
-        // Update time display
-        this.updateTimeDisplay();
-        
-        // Update player
-        this.player.update();
-        
-        // Update controls
-        this.controls.update();
-        
-        // Update current level
-        if (this.levels.length > 0) {
-            const currentLevel = this.levels[0];
-            currentLevel.update();
-            
-            // Check collisions
-            this.levelCompleted = currentLevel.checkCollision(this.player);
-            
-            // Check if level completed
-            if (this.levelCompleted) {
-                this.completeLevel();
-            }
-        }
-        
-        // Update monetization
-        if (this.monetization.update(this.player.position)) {
-            // If an orb was collected
-            this.player.addBonusPoints(100);
-        }
-        
-        // Check if player has fallen too far
-        if (this.player.position.y < -20) {
-            this.endGame();
-        }
-    }
+        if (!this.isRunning) return;
 
-    updateTimeDisplay() {
+        // Update player
+        this.player.update(deltaTime);
+
+        // Update portals
+        this.portals.forEach(portal => {
+            portal.update();
+            
+            // Check for portal collision
+            if (portal.checkCollision(this.player.mesh.position)) {
+                portal.handlePortalEnter();
+            }
+        });
+
+        // Update levels
+        this.levels.forEach(level => level.update(deltaTime));
+
+        // Check for level completion
+        if (!this.levelCompleted && this.levels[this.currentLevel - 1]?.checkCollision(this.player)) {
+            this.completeLevel();
+        }
+
+        // Update UI
         if (this.timeCountElement) {
             this.timeCountElement.textContent = Math.floor(this.elapsedTime).toString();
         }
@@ -308,6 +427,10 @@ class Game {
         if (this.monetization) {
             this.monetization.dispose();
             this.monetization = null;
+        }
+        if (this.portals) {
+            this.portals.forEach(portal => portal.dispose());
+            this.portals = [];
         }
         if (this.scene) this.scene = null;
         

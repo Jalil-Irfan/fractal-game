@@ -55,10 +55,34 @@
             max-height: 200px;
             overflow-y: auto;
         }
+
+        #mute-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.7);
+            border: none;
+            color: white;
+            padding: 10px;
+            border-radius: 50%;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            z-index: 1000;
+        }
+
+        #mute-button.muted {
+            background: rgba(255,0,0,0.7);
+        }
     </style>
 </head>
 <body>
     <div id="game-container">
+        <button id="mute-button" class="btn">🔊</button>
         <div id="start-screen">
             <h1>Fractal Drop - Simple Test</h1>
             <div>
@@ -148,22 +172,31 @@
                                     console.log('leaderboard.js loaded');
                                     loadScript(basePath + 'monetization.js', function() {
                                         console.log('monetization.js loaded');
-                                        loadScript(basePath + 'game.js', function() {
-                                            console.log('game.js loaded');
-                                            loadScript(basePath + 'main.js', function() {
-                                                console.log('main.js loaded');
-                                                console.log('All scripts loaded');
-                                                
-                                                // Try to initialize game manually
-                                                try {
-                                                    window.game = new Game();
-                                                    document.getElementById('error-log').innerHTML += 
-                                                        '<div style="color:green">Game initialized successfully!</div>';
-                                                } catch (e) {
-                                                    document.getElementById('error-log').innerHTML += 
-                                                        '<div style="color:red">Error initializing game: ' + e.message + '</div>';
-                                                    console.error(e);
-                                                }
+                                        // Load portal.js first
+                                        loadScript(basePath + 'portal.js', function() {
+                                            console.log('portal.js loaded successfully');
+                                            // Only load game.js after portal.js is loaded
+                                            loadScript(basePath + 'game.js', function() {
+                                                console.log('game.js loaded successfully');
+                                                // Load main.js last
+                                                loadScript(basePath + 'main.js', function() {
+                                                    console.log('main.js loaded successfully');
+                                                    console.log('All scripts loaded in correct order');
+                                                    
+                                                    // Try to initialize game manually
+                                                    try {
+                                                        if (typeof Portal === 'undefined') {
+                                                            throw new Error('Portal class is not defined');
+                                                        }
+                                                        window.game = new Game();
+                                                        document.getElementById('error-log').innerHTML += 
+                                                            '<div style="color:green">Game initialized successfully!</div>';
+                                                    } catch (e) {
+                                                        document.getElementById('error-log').innerHTML += 
+                                                            '<div style="color:red">Error initializing game: ' + e.message + '</div>';
+                                                        console.error('Game initialization error:', e);
+                                                    }
+                                                });
                                             });
                                         });
                                     });
