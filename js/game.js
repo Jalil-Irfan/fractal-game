@@ -44,69 +44,67 @@ class Game {
     init() {
         console.log('Initializing game');
         
-        // Create game components
-        this.scene = new Scene();
-        if (!this.scene) {
-            console.error('Failed to create scene');
-            return;
-        }
-        console.log('Scene created');
-
-        this.player = new Player();
-        if (!this.player) {
-            console.error('Failed to create player');
-            return;
-        }
-        console.log('Player created');
-
+        // Initialize audio
         this.audio = new AudioManager();
-        if (!this.audio) {
-            console.error('Failed to create audio manager');
-            return;
-        }
-        console.log('Audio manager created');
+        this.audio.init();
 
+        // Initialize scene
+        this.scene = new Scene();
+
+        // Initialize player
+        this.player = new Player();
+        this.player.init(this.scene);
+
+        // Initialize controls
+        this.controls = new Controls(this.scene.camera, this.player);
+
+        // Initialize levels
+        this.levels = [];
+        this.currentLevel = 1;
+        this.createInitialLevels();
+
+        // Initialize UI
+        this.initUI();
+
+        // Initialize monetization
+        this.monetization = new Monetization();
+
+        // Initialize leaderboard
         this.leaderboard = new Leaderboard();
-        if (!this.leaderboard) {
-            console.error('Failed to create leaderboard');
-            return;
+
+        // Start game loop
+        this.isRunning = true;
+        this.lastTime = performance.now();
+        this.elapsedTime = 0;
+        this.gameLoop();
+
+        // Add event listeners
+        window.addEventListener('resize', () => this.handleResize());
+        document.getElementById('mute-button').addEventListener('click', () => this.handleMute());
+
+        console.log('Game initialized successfully');
+    }
+
+    initUI() {
+        // Initialize UI elements
+        this.startScreen = document.getElementById('start-screen');
+        this.gameScreen = document.getElementById('game-screen');
+        this.gameOverScreen = document.getElementById('game-over-screen');
+        this.levelCountElement = document.getElementById('level-count');
+        this.timeCountElement = document.getElementById('time-count');
+
+        // Set up event listeners
+        this.setupEventListeners();
+
+        // Show start screen initially
+        if (this.startScreen) {
+            this.startScreen.classList.remove('hidden');
         }
-        console.log('Leaderboard created');
-        
-        // Initialize components
-        try {
-            this.audio.init();
-            console.log('Audio initialized');
-            
-            this.player.init(this.scene);
-            console.log('Player initialized');
-            
-            this.controls = new Controls(this.scene.camera, this.player);
-            console.log('Controls initialized');
-            
-            this.monetization = new Monetization(this.scene.scene);
-            console.log('Monetization initialized');
-            
-            // Setup event listeners
-            this.setupEventListeners();
-            console.log('Event listeners setup complete');
-            
-            // Create portals if portal parameter is present
-            if (new URLSearchParams(window.location.search).get('portal')) {
-                // Create entry portal at spawn point
-                const entryPortal = new Portal(this.scene, new THREE.Vector3(SPAWN_POINT_X, SPAWN_POINT_Y, SPAWN_POINT_Z), new THREE.Euler(0.35, 0, 0), true);
-                entryPortal.init();
-                this.portals.push(entryPortal);
-            }
-            
-            // Create exit portal
-            const exitPortal = new Portal(this.scene, new THREE.Vector3(-200, 200, -300), new THREE.Euler(0.35, 0, 0), false);
-            exitPortal.init();
-            this.portals.push(exitPortal);
-            
-            console.log('Game initialized successfully');
-        } catch (error) {
-            console.error('Error during game initialization:', error);
+        if (this.gameScreen) {
+            this.gameScreen.classList.add('hidden');
+        }
+        if (this.gameOverScreen) {
+            this.gameOverScreen.classList.add('hidden');
         }
     }
 
@@ -455,5 +453,24 @@ class Game {
         if (this.scene) this.scene = null;
         
         console.log('Game disposed');
+    }
+
+    handleMute() {
+        if (this.audio) {
+            this.audio.toggleMute();
+        }
+    }
+
+    handleResize() {
+        // Update camera aspect ratio
+        if (this.scene && this.scene.camera) {
+            this.scene.camera.aspect = window.innerWidth / window.innerHeight;
+            this.scene.camera.updateProjectionMatrix();
+        }
+
+        // Update renderer size
+        if (this.scene && this.scene.renderer) {
+            this.scene.renderer.setSize(window.innerWidth, window.innerHeight);
+        }
     }
 }

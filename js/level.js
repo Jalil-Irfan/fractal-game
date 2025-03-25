@@ -10,8 +10,8 @@ class Level {
         this.platformWidth = 20;
         this.platformHeight = 1;
         this.platformDepth = 20;
-        this.platformGap = 15;
-        this.platformCount = 3;
+        this.platformGap = 20;
+        this.platformCount = 5;
         
         // Calculate start height for the level
         this.startY = (this.levelNumber - 1) * (this.platformGap * this.platformCount);
@@ -32,8 +32,8 @@ class Level {
         // Create platforms from top to bottom
         for (let i = 0; i < this.platformCount; i++) {
             // Platform becomes more challenging with level progression
-            const platformWidth = this.platformWidth - (this.levelNumber * 0.5);
-            const platformDepth = this.platformDepth - (this.levelNumber * 0.5);
+            const platformWidth = Math.max(15, this.platformWidth - (this.levelNumber * 0.5));
+            const platformDepth = Math.max(15, this.platformDepth - (this.levelNumber * 0.5));
             
             // Platform Y position
             const y = this.startY - (i * this.platformGap);
@@ -54,7 +54,9 @@ class Level {
             const material = new THREE.MeshPhongMaterial({ 
                 color: platformColor,
                 specular: 0x111111,
-                shininess: 30
+                shininess: 30,
+                transparent: true,
+                opacity: 0.9
             });
             
             // Create platform mesh
